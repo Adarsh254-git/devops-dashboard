@@ -30,7 +30,15 @@ const App = () => {
     const fetchDeployData = () => {
       fetch("http://localhost:5000/api/deployments")
         .then((res) => res.json())
-        .then((data) => setDeployments(data.slice(0, 5)))
+        .then((data) => {
+          // Check if data is an array before setting state
+          if (Array.isArray(data)) {
+            setDeployments(data.slice(0, 5));
+          } else {
+            console.error("Received object instead of array:", data);
+            setDeployments([]); // Set to empty array to avoid crashes
+          }
+        })
         .catch((err) => console.error("Deployment fetch failed", err));
     };
 
