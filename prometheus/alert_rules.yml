@@ -1,0 +1,11 @@
+groups:
+  - name: devops_alerts
+    rules:
+      - alert: AppDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Instance {{ $labels.instance }} down"
+          description: "Instance {{ $labels.instance }} has been down for more than 1 minute."

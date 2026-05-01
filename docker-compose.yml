@@ -1,0 +1,31 @@
+services:
+  # The React App
+  frontend:
+    build: ./frontend
+    ports:
+      - "3005:3000"
+    depends_on:
+      - backend
+
+  # The Node.js API
+  backend:
+    build: ./backend
+    container_name: mern_backend
+    ports:
+      - "5000:5000"
+
+  # The Database
+  database:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+
+  # The Monitoring
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    depends_on:
+      - backend

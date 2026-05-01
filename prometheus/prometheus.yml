@@ -1,0 +1,12 @@
+global:
+  scrape_interval: 15s
+
+# This must be at the very start of the line!
+rule_files:
+  - "alert_rules.yml"
+
+scrape_configs:
+  - job_name: "mern-backend"
+    static_configs:
+      # This MUST match the name "backend" from the docker-compose file
+      - targets: ["backend:5000"]
