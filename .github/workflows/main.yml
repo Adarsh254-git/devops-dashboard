@@ -21,6 +21,3 @@ jobs:
       - name: Verify Files (Debug Step)
         # This will list files so we can see what the runner sees
         run: ls -R
-
-      - name: Force fail for testing
-  run: exit 1
