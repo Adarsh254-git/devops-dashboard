@@ -3,8 +3,6 @@ name: DevOps Dashboard CI
 on:
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
 
 jobs:
   build:
@@ -19,12 +17,12 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Install Dependencies
-        # Change 'backend' to whatever your folder name is
+      - name: Install Backend Dependencies
+        # This points exactly to the 'backend' folder from your screenshot
         run: npm install
         working-directory: ./backend
 
       - name: Run Build
-        # Change 'backend' to whatever your folder name is
+        # This will run if you have a build script, otherwise it skips safely
         run: npm run build --if-present
         working-directory: ./backend
