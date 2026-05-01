@@ -8,6 +8,8 @@
   },
   "dependencies": {
     "@octokit/rest": "^22.0.1",
+    "adm-zip": "^0.5.17",
+    "axios": "^1.15.2",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "*",

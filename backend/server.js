@@ -1,18 +1,50 @@
 require("dotenv").config();
 const express = require("express");
-const { Octokit } = require("@octokit/rest");
 const cors = require("cors");
-const promClient = require("prom-client");
 const os = require("os");
+const { Octokit } = require("@octokit/rest");
+const promClient = require("prom-client");
+const axios = require("axios");
+const AdmZip = require("adm-zip");
+
 const osUtils = require("os-utils");
 
 const app = express();
 const PORT = Number(process.env.PORT || 5000);
 app.use(cors());
+app.use(express.json());
 
 const octokit = new Octokit({
   auth: process.env.GITHUB_TOKEN,
 });
+
+const githubHeaders = process.env.GITHUB_TOKEN
+  ? {
+      Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+      Accept: "application/vnd.github+json",
+      "X-GitHub-Api-Version": "2022-11-28",
+    }
+  : {
+      Accept: "application/vnd.github+json",
+      "X-GitHub-Api-Version": "2022-11-28",
+    };
+
+function extractZipLogsFromBuffer(buffer) {
+  const zip = new AdmZip(Buffer.from(buffer));
+  const zipEntries = zip.getEntries();
+
+  const logEntries = zipEntries
+    .filter((entry) => !entry.isDirectory && entry.entryName.endsWith(".txt"))
+    .sort((a, b) => a.entryName.localeCompare(b.entryName));
+
+  let fullLog = "";
+  logEntries.forEach((entry) => {
+    fullLog += `\n--- STEP: ${entry.entryName.split("/").pop()} ---\n`;
+    fullLog += entry.getData().toString("utf8");
+  });
+
+  return fullLog;
+}
 
 // Create a dedicated registry so it’s easy to export metrics.
 const register = new promClient.Registry();
@@ -70,6 +102,94 @@ app.get("/api/stats", (req, res) => {
   });
 });
 
+// backend/server.js
+
+app.get("/api/deployments/:runId/logs", async (req, res) => {
+  const { runId } = req.params;
+  console.log(`>>> Processing logs for Run ID: ${runId}`);
+
+  try {
+    // 1) Primary path: workflow-level logs archive
+    const response = await octokit.actions.downloadWorkflowRunLogs({
+      owner: process.env.GITHUB_OWNER,
+      repo: process.env.GITHUB_REPO,
+      run_id: runId,
+    });
+
+    // 2) Download ZIP with Axios
+    const zipResponse = await axios({
+      method: "get",
+      url: response.url,
+      responseType: "arraybuffer",
+    });
+
+    const fullLog = extractZipLogsFromBuffer(zipResponse.data);
+
+    if (!fullLog) {
+      return res
+        .status(404)
+        .json({ error: "No text logs found in the archive." });
+    }
+
+    res.json({ logs: fullLog });
+  } catch (err) {
+    // Fallback path: try per-job logs if run-level endpoint is unavailable.
+    try {
+      const jobsResponse = await octokit.actions.listJobsForWorkflowRun({
+        owner: process.env.GITHUB_OWNER,
+        repo: process.env.GITHUB_REPO,
+        run_id: Number(runId),
+        per_page: 100,
+      });
+
+      const jobs = jobsResponse.data.jobs || [];
+      let combinedLogs = "";
+
+      for (const job of jobs) {
+        if (!job.logs_url) continue;
+
+        const jobLogResponse = await axios({
+          method: "get",
+          url: job.logs_url,
+          headers: githubHeaders,
+          responseType: "arraybuffer",
+          maxRedirects: 5,
+          validateStatus: (status) => status >= 200 && status < 400,
+        });
+
+        let jobLogText = "";
+        try {
+          jobLogText = extractZipLogsFromBuffer(jobLogResponse.data);
+        } catch (_zipErr) {
+          jobLogText = Buffer.from(jobLogResponse.data).toString("utf8");
+        }
+
+        if (jobLogText && jobLogText.trim()) {
+          combinedLogs += `\n========== JOB: ${job.name || job.id} ==========\n`;
+          combinedLogs += jobLogText;
+        }
+      }
+
+      if (combinedLogs.trim()) {
+        return res.json({ logs: combinedLogs });
+      }
+    } catch (fallbackErr) {
+      console.error("Per-job log fallback failed:", fallbackErr.message);
+    }
+
+    const status = err.status || 500;
+    const details =
+      status === 404
+        ? "GitHub returned 404 for this run logs endpoint. This is usually caused by missing token permissions (Actions: Read), inaccessible repository scope, or logs already expired."
+        : err.message;
+
+    console.error("CRITICAL BACKEND ERROR:", err.message);
+    res
+      .status(status >= 400 ? status : 500)
+      .json({ error: "Failed to process logs", details });
+  }
+});
+
 app.get("/api/deployments", async (req, res) => {
   try {
     const response = await octokit.actions.listWorkflowRuns({
@@ -81,7 +201,7 @@ app.get("/api/deployments", async (req, res) => {
     });
 
     const deployments = response.data.workflow_runs.map((run) => ({
-      id: run.id,  
+      id: run.id,
       commitMsg: run.head_commit?.message || "Manual Run",
       status:
         run.conclusion === "success"
