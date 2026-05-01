@@ -11,7 +11,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
 
       - name: Install Dependencies
         # This tells the terminal to 'cd backend' before running npm install
@@ -21,3 +21,6 @@ jobs:
       - name: Verify Files (Debug Step)
         # This will list files so we can see what the runner sees
         run: ls -R
+
+      - name: Force fail for testing
+  run: exit 1

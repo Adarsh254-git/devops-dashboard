@@ -9,6 +9,7 @@
   "dependencies": {
     "@octokit/rest": "^22.0.1",
     "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
     "express": "*",
     "os-utils": "^0.0.14",
     "prom-client": "*"

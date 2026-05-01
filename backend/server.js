@@ -1,3 +1,4 @@
+require("dotenv").config();
 const express = require("express");
 const { Octokit } = require("@octokit/rest");
 const cors = require("cors");
@@ -72,13 +73,16 @@ app.get("/api/stats", (req, res) => {
 app.get("/api/deployments", async (req, res) => {
   try {
     const response = await octokit.actions.listWorkflowRuns({
-      owner: "YOUR_GITHUB_USERNAME",
-      repo: "YOUR_REPO_NAME",
+      owner: process.env.GITHUB_OWNER,
+      repo: process.env.GITHUB_REPO,
+      // Change this to the actual filename of your yaml file
+      workflow_id: "main.yml",
       per_page: 5,
     });
 
     const deployments = response.data.workflow_runs.map((run) => ({
-      commitMsg: run.head_commit.message,
+      id: run.id,  
+      commitMsg: run.head_commit?.message || "Manual Run",
       status:
         run.conclusion === "success"
           ? "success"
@@ -92,7 +96,8 @@ app.get("/api/deployments", async (req, res) => {
 
     res.json(deployments);
   } catch (error) {
-    res.status(500).json({ error: "Failed to fetch GitHub Actions" });
+    console.error("GitHub Error:", error.message);
+    res.status(500).json({ error: error.message });
   }
 });
 
