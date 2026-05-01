@@ -1,4 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import {
   XAxis,
   YAxis,
@@ -31,12 +33,20 @@ const App = () => {
       fetch("http://localhost:5000/api/deployments")
         .then((res) => res.json())
         .then((data) => {
-          // Check if data is an array before setting state
           if (Array.isArray(data)) {
             setDeployments(data.slice(0, 5));
+
+            // 2. Add the Alert Logic here
+            // Check if the most recent deployment (index 0) failed
+            if (data.length > 0 && data[0].status === "failure") {
+              toast.error(`Alert: Deployment Failed! - ${data[0].commitMsg}`, {
+                position: "top-right",
+                autoClose: 5000,
+                theme: "colored",
+              });
+            }
           } else {
-            console.error("Received object instead of array:", data);
-            setDeployments([]); // Set to empty array to avoid crashes
+            setDeployments([]);
           }
         })
         .catch((err) => console.error("Deployment fetch failed", err));
@@ -209,22 +219,27 @@ const App = () => {
       </header>
 
       <div style={gridStyle}>
-        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-          <MonitoringCard
-            title="CPU Usage"
-            dataKey="cpuUsage"
-            color="#6366f1"
-            data={history}
-            unit="%"
-          />
-          <MonitoringCard
-            title="Memory Usage"
-            dataKey="memoryUsage"
-            color="#10b981"
-            data={history}
-            unit="%"
-          />
-        </div>
+        <ToastContainer /> {/* This allows the alerts to show up on screen */}
+        <header style={headerStyle}>
+          <div
+            style={{ display: "flex", flexDirection: "column", gap: "20px" }}
+          >
+            <MonitoringCard
+              title="CPU Usage"
+              dataKey="cpuUsage"
+              color="#6366f1"
+              data={history}
+              unit="%"
+            />
+            <MonitoringCard
+              title="Memory Usage"
+              dataKey="memoryUsage"
+              color="#10b981"
+              data={history}
+              unit="%"
+            />
+          </div>
+        </header>
         <DeploymentCard deployments={deployments} />
       </div>
     </div>
