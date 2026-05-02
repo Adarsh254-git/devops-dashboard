@@ -1,4 +1,33 @@
 @import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+
+  --color-bg-deep: #020617;
+  --color-bg-main: #020617;
+  --color-bg-card: #0f172a;
+  --color-bg-elevated: #1e293b;
+  --color-bg-code: #0d1117;
+
+  --color-border-subtle: #1e293b;
+  --color-border-default: #334155;
+  --color-border-strong: #475569;
+
+  --color-text-primary: #f1f5f9;
+  --color-text-secondary: #94a3b8;
+  --color-text-muted: #64748b;
+
+  --color-brand-primary: #38bdf8;
+  --color-brand-secondary: #818cf8;
+  --color-accent-success: #34d399;
+  --color-accent-warning: #fbbf24;
+  --color-accent-danger: #f87171;
+  --color-accent-error: #f87171;
+
+  --shadow-card: 0 25px 50px -12px rgb(0 0 0 / 0.45);
+  --shadow-soft: 0 4px 24px rgb(0 0 0 / 0.35);
+}
+
 * {
   box-sizing: border-box;
 }
@@ -11,23 +40,36 @@ body,
 }
 
 body {
-  font-family: "Inter", "Segoe UI", Roboto, sans-serif;
+  font-family: var(--font-sans);
   background:
     radial-gradient(
-      circle at 10% 10%,
-      rgba(79, 70, 229, 0.35),
-      transparent 35%
+      circle at 12% 8%,
+      rgb(56 189 248 / 0.12),
+      transparent 42%
     ),
     radial-gradient(
-      circle at 90% 15%,
-      rgba(6, 182, 212, 0.25),
-      transparent 30%
+      circle at 88% 12%,
+      rgb(129 140 248 / 0.1),
+      transparent 38%
     ),
     radial-gradient(
-      circle at 60% 80%,
-      rgba(168, 85, 247, 0.2),
-      transparent 35%
+      circle at 50% 95%,
+      rgb(52 211 153 / 0.06),
+      transparent 40%
     ),
-    #020617;
-  color: #e2e8f0;
+    var(--color-bg-deep);
+  color: var(--color-text-primary);
+}
+
+/* Focus rings */
+:focus-visible {
+  outline: 2px solid var(--color-brand-primary);
+  outline-offset: 2px;
+}
+
+/* Toastify dark alignment */
+.Toastify__toast-theme--dark {
+  --toastify-color-dark: #1e293b;
+  --toastify-text-color-dark: #f1f5f9;
+  --toastify-color-progress-dark: #38bdf8;
 }

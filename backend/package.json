@@ -10,9 +10,12 @@
     "@octokit/rest": "^22.0.1",
     "adm-zip": "^0.5.17",
     "axios": "^1.15.2",
+    "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "*",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^8.23.1",
     "os-utils": "^0.0.14",
     "prom-client": "*"
   }

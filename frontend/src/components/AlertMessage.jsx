@@ -1,4 +1,4 @@
-import React from "react";
+
 
 const AlertMessage = ({ type, message, onClear }) => {
   const styles = {

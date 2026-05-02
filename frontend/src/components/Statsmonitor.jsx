@@ -1,10 +1,9 @@
-import React, { useEffect, useRef, useState } from "react";
-import { cardStyle, cardTitleStyle } from "./Styles";
+import { useEffect, useRef, useState } from "react";
 
 const WINDOW = 30;
 const INTERVAL_MS = 1000;
+const API_BASE = "http://localhost:5000";
 
-// ── Single Canvas Wave Chart ───────────────────────────────────────────────────
 const WaveChart = ({ data, color, unit, label }) => {
   const canvasRef = useRef(null);
   const latest = [...data].reverse().find((v) => v != null) ?? 0;
@@ -21,11 +20,10 @@ const WaveChart = ({ data, color, unit, label }) => {
     const chartH = H - PAD.top - PAD.bottom;
 
     ctx.clearRect(0, 0, W, H);
-    ctx.fillStyle = "#ffffff";
+    ctx.fillStyle = "#0f172a";
     ctx.fillRect(0, 0, W, H);
 
-    // Grid + Y-axis labels
-    ctx.strokeStyle = "#f1f5f9";
+    ctx.strokeStyle = "#334155";
     ctx.lineWidth = 1;
     ctx.fillStyle = "#94a3b8";
     ctx.font = "10px Inter, system-ui, sans-serif";
@@ -39,7 +37,6 @@ const WaveChart = ({ data, color, unit, label }) => {
       ctx.fillText(`${v}${unit}`, PAD.left - 4, y + 3);
     });
 
-    // Map data → canvas coords
     const pts = data.map((d, i) => ({
       x: PAD.left + (i / (WINDOW - 1)) * chartW,
       y:
@@ -52,7 +49,6 @@ const WaveChart = ({ data, color, unit, label }) => {
     const last = [...pts].reverse().find((p) => p.y != null);
     if (!first || !last) return;
 
-    // Gradient fill
     const grad = ctx.createLinearGradient(0, PAD.top, 0, PAD.top + chartH);
     grad.addColorStop(0, color + "44");
     grad.addColorStop(1, color + "00");
@@ -75,7 +71,6 @@ const WaveChart = ({ data, color, unit, label }) => {
     ctx.fillStyle = grad;
     ctx.fill();
 
-    // Stroke line
     ctx.beginPath();
     started = false;
     pts.forEach((p) => {
@@ -94,28 +89,22 @@ const WaveChart = ({ data, color, unit, label }) => {
     ctx.lineCap = "round";
     ctx.stroke();
 
-    // Latest dot
     ctx.beginPath();
     ctx.arc(last.x, last.y, 4, 0, Math.PI * 2);
     ctx.fillStyle = color;
     ctx.fill();
-    ctx.strokeStyle = "#fff";
+    ctx.strokeStyle = "#f8fafc";
     ctx.lineWidth = 2;
     ctx.stroke();
   }, [data, color, unit]);
 
   return (
-    <div style={cardStyle}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "baseline",
-          marginBottom: 12,
-        }}
-      >
-        <h3 style={cardTitleStyle}>{label}</h3>
-        <span style={{ fontSize: "1.4rem", fontWeight: 700, color }}>
+    <div className="rounded-xl border border-border-default bg-bg-card/90 backdrop-blur-sm p-5 shadow-soft">
+      <div className="flex justify-between items-baseline mb-3">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-text-muted">
+          {label}
+        </h3>
+        <span className="text-xl font-bold tabular-nums" style={{ color }}>
           {latest.toFixed(1)}
           {unit}
         </span>
@@ -124,31 +113,24 @@ const WaveChart = ({ data, color, unit, label }) => {
         ref={canvasRef}
         width={560}
         height={180}
-        style={{ width: "100%", height: "auto", display: "block" }}
+        className="w-full h-auto block rounded-lg border border-border-subtle"
       />
     </div>
   );
 };
 
-// ── StatsMonitor ──────────────────────────────────────────────────────────────
-/**
- * Props:
- *   onStatusChange(status: "Online" | "Offline" | "Connecting...") – optional callback
- */
 const StatsMonitor = ({ onStatusChange }) => {
   const [cpu, setCpu] = useState(Array(WINDOW).fill(null));
   const [mem, setMem] = useState(Array(WINDOW).fill(null));
-  const tickRef = useRef(WINDOW);
 
   useEffect(() => {
     const fetchStats = () => {
-      fetch("http://localhost:5000/api/stats")
+      fetch(`${API_BASE}/api/stats`)
         .then((r) => r.json())
         .then((d) => {
           onStatusChange?.("Online");
           setCpu((prev) => [...prev.slice(1), Number(d.cpuUsage) || null]);
           setMem((prev) => [...prev.slice(1), Number(d.memoryUsage) || null]);
-          tickRef.current++;
         })
         .catch(() => onStatusChange?.("Offline"));
     };
@@ -159,9 +141,9 @@ const StatsMonitor = ({ onStatusChange }) => {
   }, [onStatusChange]);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-      <WaveChart data={cpu} color="#6366f1" unit="%" label="CPU Usage" />
-      <WaveChart data={mem} color="#10b981" unit="%" label="Memory Usage" />
+    <div className="flex flex-col gap-5">
+      <WaveChart data={cpu} color="#818cf8" unit="%" label="CPU usage" />
+      <WaveChart data={mem} color="#34d399" unit="%" label="Memory usage" />
     </div>
   );
 };
